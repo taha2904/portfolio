@@ -13,17 +13,17 @@
 	<meta property="og:title" content="Taha Amir Khan — Portfolio">
 	<meta property="og:description" content="Digital/Product Analyst. Case studies in CRO, AEM, Decibel analytics, Power BI, and UX prototypes.">
 	<meta property="og:type" content="website">
-	<meta property="og:url" content="">
+	<meta property="og:url" content="https://taha2904.github.io/portfolio/">
 	<meta property="og:image" content="assets/og-image.png">
 </head>
 <body>
 	<header class="site-header">
 		<nav class="nav">
-			<a href="#" class="brand">TAHA AMIR KHAN</a>
-			<button class="nav-toggle" aria-label="Toggle menu" aria-expanded="false">
+			<a href="#hero" class="brand">TAHA AMIR KHAN</a>
+			<button class="nav-toggle" aria-label="Toggle menu" aria-expanded="false" aria-controls="nav-links">
 				<span></span><span></span><span></span>
 			</button>
-			<ul class="nav-links">
+			<ul class="nav-links" id="nav-links">
 				<li><a href="#about">About</a></li>
 				<li><a href="#projects">Projects</a></li>
 				<li><a href="#contact">Contact</a></li>
@@ -79,7 +79,7 @@
 			</div>
 
 			<div class="projects-grid">
-				<!-- Cards now include details instead of modal buttons -->
+				<!-- Cards show summaries; click "View details" to open modal -->
 				<article class="card" data-project="jlr-competitors" data-tools="Recommendations,Research,Deck">
 					<h3>Competitor Analysis → Actionable Recommendations</h3>
 					<p class="subtitle">Benchmarked competitor journeys to steer the New Jaguar digital experience.</p>
@@ -434,9 +434,22 @@
 	}
 	</script>
 
-	<script src="script.js"></script>
+</script>
 	<script>
 		// Basic analytics-friendly tabs and filter behaviour (GOV.UK-inspired simplicity)
 	</script>
+	<script>
+    (function () {
+      const params = new URLSearchParams(window.location.search);
+      if (params.has('lite')) {
+        document.querySelectorAll('a.btn.inline').forEach(a => {
+          const t = (a.textContent || '').toLowerCase();
+          if (t.includes('download cv') || t.includes('download portfolio')) {
+            a.style.display = 'none';
+          }
+        });
+      }
+    })();
+  </script>
 </body>
 </html> 
