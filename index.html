@@ -15,6 +15,22 @@
 	<meta property="og:type" content="website">
 	<meta property="og:url" content="https://taha2904.github.io/portfolio/">
 	<meta property="og:image" content="assets/og-image.png">
+	<script>document.documentElement.classList.add('js');</script>
+	<style>
+		/* Helper utilities for explore-first UX */
+		.is-hidden { display: none !important; }
+		.js .hide-on-init { display: none !important; }
+		/* Category tiles layout (matches grid rhythm) */
+		#categories-grid { max-width: 1000px; margin: 12px auto 0; padding: 0 15px; display: none; grid-template-columns: 1fr 1fr; gap: 16px; }
+		#categories-grid[data-open="true"] { display: grid; }
+		.category-tile { border: 1px solid var(--govuk-border); border-radius: 6px; background: var(--govuk-white); padding: 14px; text-align: left; cursor: pointer; }
+		.category-tile:hover { box-shadow: 0 2px 0 var(--govuk-black); }
+		.category-tile:focus-visible { outline: 3px solid var(--govuk-focus); outline-offset: 2px; }
+		.category-tile h3 { margin: 0 0 6px; font-size: 18px; }
+		.category-tile p { margin: 0; color: var(--govuk-dark-grey); }
+		/* Responsive columns mirror projects grid */
+		@media (max-width: 700px) { #categories-grid { grid-template-columns: 1fr; } }
+	</style>
 </head>
 <body>
 	<header class="site-header">
@@ -67,7 +83,7 @@
 			<div class="section-header">
 				<h2>Case studies</h2>
 				<p>Outcome-first summaries with expandable details. Use filters to jump to tools.</p>
-				<div class="tools" id="tools-filter" role="tablist" aria-label="Filter by tool">
+				<div class="tools hide-on-init" id="tools-filter" role="tablist" aria-label="Filter by tool">
 					<button class="tool" data-tool="all" aria-selected="true"><img alt="All" src="assets/icons/doc.svg">All</button>
 					<button class="tool" data-tool="AEM"><img alt="AEM" src="assets/icons/aem.svg">AEM</button>
 					<button class="tool" data-tool="Decibel"><img alt="Decibel" src="assets/icons/decibel.svg">Decibel</button>
@@ -78,7 +94,41 @@
 				</div>
 			</div>
 
-			<div class="projects-grid">
+			<!-- Explore-first controls (shown when grid is open) -->
+			<div class="section-header is-hidden" id="explore-controls" aria-live="polite">
+				<button type="button" class="btn" id="back-to-categories" aria-controls="categories-grid">Back to categories</button>
+				<button type="button" class="btn inline" id="show-all-projects" aria-controls="projects-grid">Show all projects</button>
+			</div>
+
+			<!-- Category tiles (visible first with JS; hidden without JS to preserve fallback) -->
+			<div id="categories-grid" role="group" aria-label="Explore by category" data-open="false">
+				<button type="button" class="category-tile" data-cat="AEM" aria-pressed="false">
+					<h3>AEM &amp; Content Ops</h3>
+					<p>Adobe Experience Manager; content execution and governance</p>
+				</button>
+				<button type="button" class="category-tile" data-cat="Decibel" aria-pressed="false">
+					<h3>Behaviour Analytics (Decibel)</h3>
+					<p>Heatmaps and session replays; friction insights</p>
+				</button>
+				<button type="button" class="category-tile" data-cat="HTML/CSS/JS" aria-pressed="false">
+					<h3>UX &amp; Web Prototyping</h3>
+					<p>HTML/CSS/JS; Chart.js; interactive prototypes</p>
+				</button>
+				<button type="button" class="category-tile" data-cat="Power BI" aria-pressed="false">
+					<h3>Power BI &amp; DAX</h3>
+					<p>Data modelling; measures; leadership-ready dashboards</p>
+				</button>
+				<button type="button" class="category-tile" data-cat="Simulation" aria-pressed="false">
+					<h3>Simulation &amp; OR</h3>
+					<p>Discrete-event modelling; capacity scenarios</p>
+				</button>
+				<button type="button" class="category-tile" data-cat="CloudNetwork" aria-pressed="false">
+					<h3>Cloud &amp; Network</h3>
+					<p>Cloud services; network build and testing</p>
+				</button>
+			</div>
+
+			<div class="projects-grid hide-on-init" id="projects-grid">
 				<!-- Cards show summaries; click "View details" to open modal -->
 				<article class="card" data-project="jlr-competitors" data-tools="Recommendations,Research,Deck">
 					<h3>Competitor Analysis → Actionable Recommendations</h3>
@@ -448,6 +498,194 @@
             a.style.display = 'none';
           }
         });
+      }
+    })();
+  </script>
+  <script>
+    (function () {
+      const projectsSection = document.getElementById('projects');
+      const grid = document.getElementById('projects-grid');
+      const tools = document.getElementById('tools-filter');
+      const categories = document.getElementById('categories-grid');
+      const controls = document.getElementById('explore-controls');
+      const backBtn = document.getElementById('back-to-categories');
+      const showAllBtn = document.getElementById('show-all-projects');
+      const cards = Array.from(grid.querySelectorAll('.card'));
+
+      // Helper: update query params without navigation
+      function updateQuery(params) {
+        const url = new URL(window.location.href);
+        // Clear view/cat
+        url.searchParams.delete('view');
+        url.searchParams.delete('cat');
+        if (params.view) url.searchParams.set('view', params.view);
+        if (params.cat) url.searchParams.set('cat', params.cat);
+        history.replaceState({}, '', url.toString());
+      }
+
+      function smoothScrollToGrid() {
+        if (!projectsSection) return;
+        projectsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+
+      function setToolsActive(value) {
+        // Toggle visual/aria selection on tool chips
+        const chips = Array.from(tools.querySelectorAll('.tool'));
+        chips.forEach(btn => {
+          const isActive = (btn.dataset.tool === value) || (value === 'all' && btn.dataset.tool === 'all');
+          btn.classList.toggle('active', isActive);
+          btn.setAttribute('aria-selected', String(isActive));
+        });
+      }
+
+      function showCategoriesView() {
+        // Reset category buttons
+        categories.querySelectorAll('.category-tile').forEach(b => b.setAttribute('aria-pressed', 'false'));
+        categories.dataset.open = 'true';
+        grid.classList.add('is-hidden');
+        tools.classList.add('is-hidden');
+        controls.classList.add('is-hidden');
+      }
+
+      function openGridView() {
+        categories.dataset.open = 'false';
+        grid.classList.remove('is-hidden');
+        grid.classList.remove('hide-on-init');
+        tools.classList.remove('is-hidden');
+        tools.classList.remove('hide-on-init');
+        controls.classList.remove('is-hidden');
+      }
+
+      function showAllCards() {
+        cards.forEach(card => card.removeAttribute('hidden'));
+        setToolsActive('all');
+      }
+
+      function filterCardsByPredicate(predicate) {
+        cards.forEach(card => {
+          const match = predicate(card);
+          if (match) {
+            card.removeAttribute('hidden');
+          } else {
+            card.setAttribute('hidden', '');
+          }
+        });
+      }
+
+      function filterByToolName(toolName) {
+        if (toolName === 'all') {
+          showAllCards();
+          return;
+        }
+        const needle = toolName.toLowerCase();
+        filterCardsByPredicate(card => (card.dataset.tools || '').toLowerCase().includes(needle));
+      }
+
+      function filterByCategoryKey(catKey) {
+        const key = (catKey || '').toLowerCase();
+        filterCardsByPredicate(card => {
+          const toolsStr = (card.dataset.tools || '').toLowerCase();
+          switch (key) {
+            case 'aem': return toolsStr.includes('aem');
+            case 'decibel': return toolsStr.includes('decibel');
+            case 'power bi': return toolsStr.includes('power bi');
+            case 'html/css/js': return toolsStr.includes('html/css/js');
+            case 'simulation': return toolsStr.includes('simulation');
+            case 'cloudnetwork': return toolsStr.includes('cloud') || toolsStr.includes('network');
+            default: return true;
+          }
+        });
+        // Also toggle tool chips if there is a direct mapping
+        const mapToChip = {
+          'aem': 'AEM',
+          'decibel': 'Decibel',
+          'power bi': 'Power BI',
+          'html/css/js': 'HTML/CSS/JS',
+          'simulation': 'Simulation'
+        };
+        if (key in mapToChip) setToolsActive(mapToChip[key]); else setToolsActive('all');
+      }
+
+      function normaliseCatParam(raw) {
+        if (!raw) return null;
+        const val = decodeURIComponent(raw).replace(/\+/g, ' ').trim();
+        const map = {
+          'aem': 'AEM',
+          'decibel': 'Decibel',
+          'power bi': 'Power BI',
+          'html/css/js': 'HTML/CSS/JS',
+          'simulation': 'Simulation',
+          'cloudnetwork': 'CloudNetwork',
+          'cloud': 'CloudNetwork',
+          'network': 'CloudNetwork'
+        };
+        const key = val.toLowerCase();
+        return map[key] || null;
+      }
+
+      // Wire category tile clicks
+      categories.addEventListener('click', (e) => {
+        const btn = e.target.closest('.category-tile');
+        if (!btn) return;
+        const cat = btn.getAttribute('data-cat');
+        categories.querySelectorAll('.category-tile').forEach(b => b.setAttribute('aria-pressed', String(b === btn)));
+        openGridView();
+        if (cat === 'CloudNetwork') filterByCategoryKey('CloudNetwork');
+        else filterByCategoryKey(cat);
+        updateQuery({ cat });
+        smoothScrollToGrid();
+      });
+
+      // Back and Show all controls
+      backBtn.addEventListener('click', () => {
+        showCategoriesView();
+        updateQuery({});
+      });
+      showAllBtn.addEventListener('click', () => {
+        openGridView();
+        showAllCards();
+        updateQuery({ view: 'all' });
+        smoothScrollToGrid();
+      });
+
+      // Tool chip filtering inside grid
+      tools.addEventListener('click', (e) => {
+        const t = e.target.closest('.tool');
+        if (!t) return;
+        const tool = t.dataset.tool;
+        openGridView();
+        setToolsActive(tool === 'all' ? 'all' : t.textContent.trim());
+        filterByToolName(tool === 'all' ? 'all' : t.textContent.trim());
+      });
+
+      // Initial state: progressive enhancement (cards visible without JS)
+      // With JS, show categories first unless URL asks for grid.
+      tools.classList.add('is-hidden');
+      grid.classList.add('is-hidden');
+      // Ensure initial hide-on-init class is respected for progressive enhancement
+      tools.classList.add('hide-on-init');
+      grid.classList.add('hide-on-init');
+      categories.dataset.open = 'true';
+
+      const params = new URLSearchParams(window.location.search);
+      const view = params.get('view');
+      const rawCat = params.get('cat');
+      const normalised = normaliseCatParam(rawCat);
+
+      if (view === 'all') {
+        openGridView();
+        showAllCards();
+        // Keep existing aria-selected on "All" chip consistent
+        setToolsActive('all');
+        // Ensure chips are visible and scroll into view
+        smoothScrollToGrid();
+      } else if (normalised) {
+        openGridView();
+        filterByCategoryKey(normalised);
+        // Reflect pressed state on matching tile
+        const tile = categories.querySelector(`[data-cat="${normalised}"]`);
+        if (tile) tile.setAttribute('aria-pressed', 'true');
+        smoothScrollToGrid();
       }
     })();
   </script>
