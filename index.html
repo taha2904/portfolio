@@ -557,12 +557,14 @@
       }
 
       function showAllCards() {
-        cards.forEach(card => card.removeAttribute('hidden'));
+        cards.forEach(card => { card.removeAttribute('hidden'); card.style.display = ''; });
         setToolsActive('all');
       }
 
       function filterCardsByPredicate(predicate) {
         cards.forEach(card => {
+          // Clear any inline style set by legacy tool-filter to avoid conflicts
+          card.style.display = '';
           const match = predicate(card);
           if (match) {
             card.removeAttribute('hidden');
@@ -689,5 +691,6 @@
       }
     })();
   </script>
+  <script src="script.js"></script>
 </body>
 </html> 
