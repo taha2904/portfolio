@@ -117,10 +117,21 @@ a:hover { color: var(--govuk-link-hover); }
 
 .about-extra { margin-top: 12px; color: var(--govuk-black); }
 
+/* Work experience */
+.experience-list { max-width: 1000px; margin: 12px auto 0; padding: 0 15px; }
+.experience-item { border: 1px solid var(--govuk-border); border-radius: 6px; background: var(--govuk-white); padding: 16px; margin-bottom: 12px; }
+.experience-header { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.experience-header h3 { margin: 0; font-size: 18px; }
+.experience-date { font-size: 14px; color: var(--govuk-dark-grey); white-space: nowrap; }
+.experience-location { margin: 4px 0 8px; font-size: 14px; color: var(--govuk-dark-grey); }
+.experience-list-items { margin: 0; padding-left: 20px; }
+.experience-list-items li { margin-bottom: 4px; color: var(--govuk-black); line-height: 1.5; }
+
 /* Responsive */
 @media (max-width: 700px) {
 	.nav { padding: 14px 15px; }
 	.brand { font-size: 20px; }
+	.experience-header { flex-direction: column; gap: 2px; }
 	.nav-links { display: none; position: absolute; right: 15px; top: 60px; background: var(--govuk-black); border: 1px solid var(--govuk-border); border-radius: 6px; padding: 10px; flex-direction: column; width: 220px; box-shadow: 0 8px 20px rgba(0,0,0,0.25); }
 	.nav-toggle { display: block; }
 	.projects-grid { grid-template-columns: 1fr; }
