@@ -1,17 +1,9 @@
-// Utilities
-const $ = (sel, ctx = document) => ctx.querySelector(sel);
-const $$ = (sel, ctx = document) => Array.from(ctx.querySelectorAll(sel));
+const $ = (selector, context = document) => context.querySelector(selector);
+const $$ = (selector, context = document) => Array.from(context.querySelectorAll(selector));
 
-// Header nav (class-based for smoother control + accessibility)
 const nav = $('.nav');
 const navToggle = $('.nav-toggle');
 const navLinks = $('.nav-links');
-
-function openNav() {
-	if (!nav) return;
-	nav.classList.add('open');
-	if (navToggle) navToggle.setAttribute('aria-expanded', 'true');
-}
 
 function closeNav() {
 	if (!nav) return;
@@ -19,124 +11,129 @@ function closeNav() {
 	if (navToggle) navToggle.setAttribute('aria-expanded', 'false');
 }
 
-if (navToggle && nav && navLinks) {
-	// Toggle on button
+if (nav && navToggle && navLinks) {
 	navToggle.addEventListener('click', () => {
-		const isOpen = nav.classList.contains('open');
-		isOpen ? closeNav() : openNav();
+		const open = nav.classList.toggle('open');
+		navToggle.setAttribute('aria-expanded', String(open));
 	});
-
-	// Close when clicking a nav link (mobile)
-	navLinks.addEventListener('click', (e) => {
-		const link = e.target.closest('a');
-		if (link) closeNav();
+	navLinks.addEventListener('click', event => {
+		if (event.target.closest('a')) closeNav();
 	});
-
-	// Click outside to close
-	document.addEventListener('click', (e) => {
-		if (!nav.classList.contains('open')) return;
-		if (!nav.contains(e.target)) closeNav();
-	});
-
-	// Escape to close
-	document.addEventListener('keydown', (e) => {
-		if (e.key === 'Escape') closeNav();
+	document.addEventListener('click', event => {
+		if (nav.classList.contains('open') && !nav.contains(event.target)) closeNav();
 	});
 }
 
-// Year
-const yearEl = $('#year');
-if (yearEl) yearEl.textContent = new Date().getFullYear();
+const year = $('#year');
+if (year) year.textContent = new Date().getFullYear();
 
-// Projects data
-const projectsDataEl = $('#projects-data');
-let projects = {};
-try { projects = JSON.parse(projectsDataEl.textContent); } catch {}
-
-// Tools filter
+const projectGrid = $('#projects-grid');
 const filterBar = $('#tools-filter');
-if (filterBar) {
-	filterBar.addEventListener('click', (e) => {
-		const btn = e.target.closest('[data-tool]');
-		if (!btn) return;
-		const tool = btn.getAttribute('data-tool');
-		$$('.projects-grid .card').forEach(card => {
-			if (tool === 'all') { card.style.display = ''; return; }
-			const tags = (card.getAttribute('data-tools') || '').toLowerCase();
-			card.style.display = tags.includes(tool.toLowerCase()) ? '' : 'none';
+const categories = $('#categories-grid');
+const exploreControls = $('#explore-controls');
+
+if (projectGrid && filterBar) {
+	const priority = ['site-research', 'multi-portal', 'jlr-thunderclap', 'jlr-aem', 'jlr-competitors', 'coventry-suite', 'ai-automation'];
+	const cards = $$('.card', projectGrid);
+	cards.sort((a, b) => {
+		const aIndex = priority.indexOf(a.dataset.project);
+		const bIndex = priority.indexOf(b.dataset.project);
+		return (aIndex < 0 ? priority.length : aIndex) - (bIndex < 0 ? priority.length : bIndex);
+	}).forEach(card => projectGrid.appendChild(card));
+
+	projectGrid.classList.remove('hide-on-init', 'is-hidden');
+	filterBar.classList.remove('hide-on-init', 'is-hidden');
+	$$('.card', projectGrid).forEach(card => {
+		card.hidden = false;
+		card.style.display = '';
+	});
+	if (categories) categories.dataset.open = 'false';
+	if (exploreControls) exploreControls.classList.add('is-hidden');
+
+	filterBar.addEventListener('click', event => {
+		const button = event.target.closest('[data-tool]');
+		if (!button) return;
+		const selected = button.dataset.tool.toLowerCase();
+		$$('[data-tool]', filterBar).forEach(item => {
+			const active = item === button;
+			item.classList.toggle('active', active);
+			item.setAttribute('aria-selected', String(active));
 		});
-		$$('#tools-filter .tool').forEach(b => b.classList.remove('active'));
-		btn.classList.add('active');
-		// ARIA state for selected tab-like control
-		$$('#tools-filter .tool').forEach(b => b.setAttribute('aria-selected', 'false'));
-		btn.setAttribute('aria-selected', 'true');
+		$$('.card', projectGrid).forEach(card => {
+			const tools = (card.dataset.tools || '').toLowerCase();
+			card.hidden = selected !== 'all' && !tools.includes(selected);
+			card.style.display = '';
+		});
 	});
 }
 
-// Render details HTML for modal from JSON (context, role, and PAO)
-function renderDetails(projectId) {
-	const data = projects[projectId];
-	if (!data) return '';
-	return `
-		<div class="panel">
-			<p><strong>Context:</strong> ${data.context}</p>
-			<p><strong>Role:</strong> ${data.role}</p>
-		</div>
-		<div class="panel">
-			<ol class="list">
-				<li><strong>Problem:</strong> ${data.pao.problem}</li>
-				<li><strong>Actions:</strong> ${data.pao.actions}</li>
-				<li><strong>Outcome:</strong> ${data.pao.outcome}</li>
-			</ol>
-		</div>
-		<div class="panel">
-			<p><strong>Tools & Keywords:</strong> ${data.keywords.join(', ')}</p>
-		</div>
-	`;
+const projectDataElement = $('#projects-data');
+let projects = {};
+try {
+	projects = projectDataElement ? JSON.parse(projectDataElement.textContent) : {};
+} catch (error) {
+	console.error('Project details could not be loaded.', error);
 }
 
-// Modal logic
 const modal = $('#project-modal');
 const modalDialog = modal ? $('.modal-dialog', modal) : null;
 const modalTitle = modal ? $('#modal-title', modal) : null;
 const modalSubtitle = modal ? $('.modal-subtitle', modal) : null;
 const modalBody = modal ? $('.modal-body', modal) : null;
+let lastFocusedElement = null;
 
-function openModalForProject(projectId) {
-	if (!modal) return;
+function renderProjectDetails(projectId) {
+	const project = projects[projectId];
+	if (!project) return '<p>More detail is available on request.</p>';
+	return `
+		<div class="panel">
+			<p><strong>Context:</strong> ${project.context}</p>
+			<p><strong>My role:</strong> ${project.role}</p>
+		</div>
+		<div class="panel">
+			<ol>
+				<li><strong>Problem:</strong> ${project.pao.problem}</li>
+				<li><strong>Actions:</strong> ${project.pao.actions}</li>
+				<li><strong>Outcome:</strong> ${project.pao.outcome}</li>
+			</ol>
+		</div>
+		<div class="panel">
+			<p><strong>Tools and keywords:</strong> ${project.keywords.join(', ')}</p>
+		</div>`;
+}
+
+function openModal(projectId, trigger) {
+	if (!modal || !modalDialog) return;
 	const card = $(`.card[data-project="${projectId}"]`);
-	const title = card ? $('h3', card)?.textContent || '' : '';
-	const subtitle = card ? $('.subtitle', card)?.textContent || '' : '';
-	if (modalTitle) modalTitle.textContent = title;
-	if (modalSubtitle) modalSubtitle.textContent = subtitle;
-	if (modalBody) modalBody.innerHTML = renderDetails(projectId);
+	lastFocusedElement = trigger || document.activeElement;
+	if (modalTitle) modalTitle.textContent = card ? $('h3', card).textContent : projects[projectId]?.title || 'Project details';
+	if (modalSubtitle) modalSubtitle.textContent = card ? $('.subtitle', card).textContent : '';
+	if (modalBody) modalBody.innerHTML = renderProjectDetails(projectId);
 	modal.setAttribute('aria-hidden', 'false');
-	// Focus trap entry
-	if (modalDialog) modalDialog.focus();
+	document.body.classList.add('modal-open');
+	modalDialog.focus();
 }
 
 function closeModal() {
 	if (!modal) return;
 	modal.setAttribute('aria-hidden', 'true');
+	document.body.classList.remove('modal-open');
+	if (lastFocusedElement instanceof HTMLElement) lastFocusedElement.focus();
 }
 
-// Wire buttons
-$$('.view-details').forEach(btn => {
-	btn.addEventListener('click', () => {
-		const id = btn.getAttribute('data-project-id');
-		if (id) openModalForProject(id);
+$$('.view-details').forEach(button => {
+	button.addEventListener('click', () => openModal(button.dataset.projectId, button));
+});
+
+if (modal) {
+	modal.addEventListener('click', event => {
+		if (event.target.matches('[data-modal-close]')) closeModal();
 	});
-});
+}
 
-// Close handlers
-document.addEventListener('click', (e) => {
-	if (!modal || modal.getAttribute('aria-hidden') !== 'false') return;
-	if (e.target?.matches('[data-modal-close]')) { closeModal(); }
-	// backdrop click
-	const backdrop = $('.modal-backdrop', modal);
-	if (e.target === backdrop) { closeModal(); }
-});
-
-document.addEventListener('keydown', (e) => {
-	if (e.key === 'Escape') closeModal();
+document.addEventListener('keydown', event => {
+	if (event.key === 'Escape') {
+		closeNav();
+		closeModal();
+	}
 });

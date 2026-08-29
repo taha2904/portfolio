@@ -1,6 +1,6 @@
-## Taha Amir Khan — Portfolio
+## Taha Amir Khan | Portfolio
 
-Digital/Product Analyst focused on improving enterprise web journeys, understanding user behaviour, and turning data into decisions.
+Digital Product and Business Analyst focused on improving enterprise web journeys, understanding user behaviour, structuring requirements and turning data into practical decisions.
 
 - AEM & Content Operations
 - Behaviour Analytics (Decibel)
@@ -8,6 +8,10 @@ Digital/Product Analyst focused on improving enterprise web journeys, understand
 - Power BI & DAX
 - Simulation & Operations Research
 - Cloud & Network continuity
+- Product platforms, automation and commercial site research
+- B2B technology account experience
+
+The site retains the full project portfolio while surfacing the most relevant and recent work first. It also includes current experience, education, awards and a public CV without a mobile phone number.
 
 ### Live site
 Visit the portfolio: `https://taha2904.github.io/portfolio/`
